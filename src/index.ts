@@ -15,7 +15,7 @@ import reportRoutes from "./routes/reports.js";
 const app = express();
 
 app.use(
-  helmet({
+  (helmet as any)({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: false,
   })
@@ -38,7 +38,7 @@ app.use(
 );
 
 if (env.NODE_ENV !== "test") {
-  const limiter = rateLimit({
+  const limiter = (rateLimit as any)({
     windowMs: 15 * 60 * 1000,
     max: 500,
     message: {
@@ -88,7 +88,7 @@ app.use("/api/reports", reportRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
   app.listen(env.PORT, () => {
     console.log(`🌿 Sweety Server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
     console.log(`🩺 Health check available at http://localhost:${env.PORT}/health`);
