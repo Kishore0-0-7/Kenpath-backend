@@ -1,0 +1,58 @@
+name: Sweety Backend CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Test & Build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sweety
+          POSTGRES_PASSWORD: sweety_password
+          POSTGRES_DB: sweety
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sweety -d sweety"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://sweety:sweety_password@localhost:5432/sweety?schema=sweety
+      JWT_SECRET: ci-sweety-jwt-secret-minimum-sixteen-chars
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:5173
+      APP_TIMEZONE: Asia/Kolkata
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client & Push DB Schema
+        run: |
+          npx prisma generate
+          npx prisma db push
+
+      - name: Build TypeScript Code
+        run: npm run build
+
+      - name: Run Vitest API Tests
+        run: npm test
